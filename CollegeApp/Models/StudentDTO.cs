@@ -18,5 +18,8 @@ namespace CollegeApp.Models
 		//[DataCheck]
 		//public DateTime AdmissionDate { get; set; }
 
+		public DateTime DOB { get; set; }
+
+
 	}
 }

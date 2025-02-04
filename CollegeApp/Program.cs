@@ -1,3 +1,4 @@
+using CollegeApp.Configurations;
 using CollegeApp.Data;
 using CollegeApp.MyLogging;
 using Microsoft.AspNetCore.Builder;
@@ -32,8 +33,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IMyLogger, LogToServerMemory>();
-builder.Services.AddSingleton<IMyLogger, LogToServerMemory>();
+builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
+
+
 builder.Services.AddTransient<IMyLogger, LogToServerMemory>();
 
 var app = builder.Build();
