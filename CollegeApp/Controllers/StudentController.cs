@@ -14,11 +14,9 @@ namespace CollegeApp.Controllers
 	{
 
 		private readonly ILogger<StudentController> _logger ;
-		private readonly CollegeDBContext _dbContext;
 		private readonly IMapper _mapper;
-        public StudentController(ILogger<StudentController> logger , CollegeDBContext dbContext , IMapper mapper)
+        public StudentController(ILogger<StudentController> logger , IMapper mapper)
         {
-			_dbContext = dbContext;
 			_mapper = mapper;
 			_logger = logger;
         }
@@ -31,7 +29,7 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
-		public async Task<ActionResult< IEnumerable<StudentDTO>>> GetStudents()
+		public  ActionResult< IEnumerable<StudentDTO>> GetStudents()
 		{
 			//var Students = new List<StudentDTO>();
 
@@ -52,7 +50,7 @@ namespace CollegeApp.Controllers
 			//var Students = _dbContext.Students;
 
 
-			var Students = await _dbContext.Students.Select(s => new StudentDTO()
+			var Students =  _dbContext.Students.Select(s => new StudentDTO()
 			{
 
 				Id = s.Id,
@@ -61,7 +59,7 @@ namespace CollegeApp.Controllers
 				Email = s.Email,
 				DOB = s.DOB,
 
-			}).ToListAsync();
+			}).ToList();
 
 			return Ok(Students);
 
