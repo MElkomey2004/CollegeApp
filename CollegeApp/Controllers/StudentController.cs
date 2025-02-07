@@ -16,8 +16,8 @@ namespace CollegeApp.Controllers
 
 		private readonly ILogger<StudentController> _logger ;
 		private readonly IMapper _mapper;
-		private readonly IStudentRepository _studentRepository;
-        public StudentController(ILogger<StudentController> logger , IMapper mapper , IStudentRepository studentRepository)
+		private readonly ICollegeRepository<Student> _studentRepository;
+        public StudentController(ILogger<StudentController> logger , IMapper mapper , ICollegeRepository<Student> studentRepository)
         {
 			_mapper = mapper;
 			_logger = logger;
@@ -78,7 +78,7 @@ namespace CollegeApp.Controllers
 			if (id <= 0)
 				return BadRequest();
 			
-			var student = _studentRepository.GetById(id);
+			var student = _studentRepository.GetById(i => i.Id == id);
 			if (student == null)
 				return NotFound("The student is not exist");
 
@@ -103,7 +103,7 @@ namespace CollegeApp.Controllers
 			if (string.IsNullOrEmpty(Name))
 				return BadRequest();
 
-			var student = _studentRepository.GetByName(Name);
+			var student = _studentRepository.GetByName(i => i.StudentName.ToLower().Contains(Name.ToLower()));
 			if (student == null)
 				return NotFound("This Student is not Exist");
 
@@ -147,9 +147,9 @@ namespace CollegeApp.Controllers
 				DOB=model.DOB
 			};
 
-			var id = _studentRepository.Create(student);
+			var Record = _studentRepository.Create(student);
 
-			model.Id = id;
+			model.Id = Record.Id;
 
 			return CreatedAtRoute("GetStudentById" , new {id = model.Id} , model);
 			
@@ -172,7 +172,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _studentRepository.GetById(model.Id , true);
+			var existingStudent = _studentRepository.GetById(i => i.Id == model.Id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -204,7 +204,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _studentRepository.GetById(id , true);
+			var existingStudent = _studentRepository.GetById(i => i.Id == id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -243,7 +243,7 @@ namespace CollegeApp.Controllers
 		{
 			if (id <= 0)
 				return BadRequest();
-			Student student = _studentRepository.GetById(id);
+			Student student = _studentRepository.GetById(i => i.Id == id);
 			if (student == null)
 				return NotFound("This Stuent is not already exist");
 			_studentRepository.Delete(student);

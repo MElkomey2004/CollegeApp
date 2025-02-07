@@ -38,8 +38,8 @@ builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 
 
 builder.Services.AddTransient<IMyLogger, LogToServerMemory>();
-builder.Services.AddTransient<IStudentRepository, SutdentRepository>();
-
+builder.Services.AddScoped<IStudentRepository, SutdentRepository>();
+builder.Services.AddScoped(typeof(ICollegeRepository<>), typeof(CollegeRepository<>));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
