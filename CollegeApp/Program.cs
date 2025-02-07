@@ -1,5 +1,6 @@
 using CollegeApp.Configurations;
 using CollegeApp.Data;
+using CollegeApp.Data.Repository;
 using CollegeApp.MyLogging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 
 
 builder.Services.AddTransient<IMyLogger, LogToServerMemory>();
+builder.Services.AddTransient<IStudentRepository, SutdentRepository>();
 
 var app = builder.Build();
 

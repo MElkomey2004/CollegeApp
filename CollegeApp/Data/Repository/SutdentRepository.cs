@@ -20,12 +20,8 @@ namespace CollegeApp.Data.Repository
 
 		bool IStudentRepository.Delete(Student student)
 		{
-			var existingStudent  = _dbContext.Students.FirstOrDefault(x => x.Id == student.Id);
-			if (existingStudent == null)
-			{
-				throw new ArgumentNullException($"This Item With This Id: {student.Id} not found");
-			}
-				_dbContext.Students.Remove(existingStudent);
+			
+				_dbContext.Students.Remove(student);
 				_dbContext.SaveChanges();
 				return true;
 			
@@ -36,10 +32,14 @@ namespace CollegeApp.Data.Repository
 			return  _dbContext.Students.ToList();
 		}
 
-		Student IStudentRepository.GetById(int id)
+		Student IStudentRepository.GetById(int id ,  bool useNoTracking = false)
 		{
-			var student = _dbContext.Students.FirstOrDefault(s => s.Id == id);
-			return student;
+			if (useNoTracking)
+
+				return _dbContext.Students.AsNoTracking().FirstOrDefault(s => s.Id == id);
+			else
+				return _dbContext.Students.FirstOrDefault(s => s.Id == id);
+			
 		}
 
 		Student IStudentRepository.GetByName(string name)
@@ -49,15 +49,8 @@ namespace CollegeApp.Data.Repository
 
 		int IStudentRepository.Update(Student student)
 		{
-			var exisistingStudent = _dbContext.Students.FirstOrDefault(i => i.Id == student.Id);
-			if(exisistingStudent == null)
-			{
-				throw new ArgumentNullException($"New Student found id: {student.Id}");
-			}
-				exisistingStudent.StudentName = student.StudentName;
-				exisistingStudent.Email = student.Email;
-				exisistingStudent.Address =  student.Address;
-				exisistingStudent.DOB = student.DOB;
+
+			_dbContext.Update(student);
 				_dbContext.SaveChanges();
 		
 			return student.Id;	

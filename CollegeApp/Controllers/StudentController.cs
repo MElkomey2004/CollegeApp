@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CollegeApp.Data;
+using CollegeApp.Data.Repository;
 using CollegeApp.Models;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,12 @@ namespace CollegeApp.Controllers
 
 		private readonly ILogger<StudentController> _logger ;
 		private readonly IMapper _mapper;
-        public StudentController(ILogger<StudentController> logger , IMapper mapper)
+		private readonly IStudentRepository _studentRepository;
+        public StudentController(ILogger<StudentController> logger , IMapper mapper , IStudentRepository studentRepository)
         {
 			_mapper = mapper;
 			_logger = logger;
+			_studentRepository = studentRepository;
         }
 
 
@@ -50,7 +53,7 @@ namespace CollegeApp.Controllers
 			//var Students = _dbContext.Students;
 
 
-			var Students =  _dbContext.Students.Select(s => new StudentDTO()
+			var Students =  _studentRepository.GetAll().Select(s => new StudentDTO()
 			{
 
 				Id = s.Id,
@@ -75,7 +78,7 @@ namespace CollegeApp.Controllers
 			if (id <= 0)
 				return BadRequest();
 			
-			var student = _dbContext.Students.FirstOrDefault(i => i.Id == id);
+			var student = _studentRepository.GetById(id);
 			if (student == null)
 				return NotFound("The student is not exist");
 
@@ -100,7 +103,7 @@ namespace CollegeApp.Controllers
 			if (string.IsNullOrEmpty(Name))
 				return BadRequest();
 
-			var student = _dbContext.Students.FirstOrDefault(s => s.StudentName == Name);
+			var student = _studentRepository.GetByName(Name);
 			if (student == null)
 				return NotFound("This Student is not Exist");
 
@@ -144,10 +147,9 @@ namespace CollegeApp.Controllers
 				DOB=model.DOB
 			};
 
-			_dbContext.Students.Add(student);
-			_dbContext.SaveChanges();
+			var id = _studentRepository.Create(student);
 
-			model.Id = student.Id;
+			model.Id = id;
 
 			return CreatedAtRoute("GetStudentById" , new {id = model.Id} , model);
 			
@@ -170,7 +172,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _dbContext.Students.FirstOrDefault(s => s.Id == model.Id);
+			var existingStudent = _studentRepository.GetById(model.Id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -179,7 +181,8 @@ namespace CollegeApp.Controllers
 			existingStudent.Email = model.Email;
 			existingStudent.Address = model.Address;
 			existingStudent.DOB = model.DOB;
-			_dbContext.SaveChanges();
+
+			_studentRepository.Update(existingStudent);
 
 			return NoContent();
 		}
@@ -201,7 +204,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _dbContext.Students.FirstOrDefault(s => s.Id ==id);
+			var existingStudent = _studentRepository.GetById(id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -226,7 +229,7 @@ namespace CollegeApp.Controllers
 			existingStudent.Address = StudentDTO.Address;
 			existingStudent.DOB = StudentDTO.DOB;
 
-			_dbContext.SaveChanges();
+			_studentRepository.Update(existingStudent);
 			return NoContent();
 
 		}
@@ -240,12 +243,11 @@ namespace CollegeApp.Controllers
 		{
 			if (id <= 0)
 				return BadRequest();
-			Student student = _dbContext.Students.FirstOrDefault(n => n.Id == id);
+			Student student = _studentRepository.GetById(id);
 			if (student == null)
 				return NotFound("This Stuent is not already exist");
-			_dbContext.Students.Remove(student);
+			_studentRepository.Delete(student);
 
-			_dbContext.SaveChanges();
 
 			return Ok(true);
 		}
