@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace CollegeApp.Controllers
 {
@@ -13,18 +14,21 @@ namespace CollegeApp.Controllers
 	[Route("api/[controller]")]
 	[ApiController] //This is reponsible for validation and other requirements i will add this soon.
 
-	[Authorize(AuthenticationSchemes ="LoginForLocalUsers",Roles ="Superadmin,Admin")]
+	
+	//[Authorize(AuthenticationSchemes ="LoginForLocalUsers",Roles ="Superadmin,Admin")]
 	public class StudentController : ControllerBase
 	{
 
 		private readonly ILogger<StudentController> _logger ;
 		private readonly IMapper _mapper;
 		private readonly IStudentRepository _studentRepository;
+		private APIResponse _apiResponse;
         public StudentController(ILogger<StudentController> logger , IMapper mapper , IStudentRepository studentRepository)
         {
 			_mapper = mapper;
 			_logger = logger;
 			_studentRepository = studentRepository;
+			_apiResponse = new();
         }
 
 
@@ -38,7 +42,7 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 		//[AllowAnonymous]
 
-		public  ActionResult< IEnumerable<StudentDTO>> GetStudents()
+		public  ActionResult< IEnumerable<APIResponse>> GetStudents()
 		{
 			//var Students = new List<StudentDTO>();
 
@@ -58,19 +62,34 @@ namespace CollegeApp.Controllers
 
 			//var Students = _dbContext.Students;
 
+			try
+			{
+				_apiResponse.data = _studentRepository.GetAll().Select(s => new StudentDTO()
+				{
 
-			var Students =  _studentRepository.GetAll().Select(s => new StudentDTO()
+					Id = s.Id,
+					StudentName = s.StudentName,
+					Address = s.Address,
+					Email = s.Email,
+					DOB = s.DOB,
+
+				}).ToList();
+				_apiResponse.Status = true;
+				_apiResponse.StatusCode = HttpStatusCode.OK;
+
+				return Ok(_apiResponse);
+
+			}
+			catch (Exception ex)
 			{
 
-				Id = s.Id,
-				StudentName = s.StudentName,
-				Address = s.Address,
-				Email = s.Email,
-				DOB = s.DOB,
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
 
-			}).ToList();
-
-			return Ok(Students);
+		
 
 		}
 
@@ -83,22 +102,37 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult<StudentDTO> Get(int id)
 		{
-			if (id <= 0)
-				return BadRequest();
-			
-			var student = _studentRepository.Get(i => i.Id == id);
-			if (student == null)
-				return NotFound("The student is not exist");
-
-
-			var StudentDTO = new StudentDTO()
+			try
 			{
-				Id =student.Id,
-				StudentName = student.StudentName,
-				Email = student.Email,
-				Address = student.Address
-			};
-			return Ok(StudentDTO);
+				if (id <= 0)
+					return BadRequest();
+
+				var student = _studentRepository.Get(i => i.Id == id);
+				if (student == null)
+					return NotFound("The student is not exist");
+
+
+				_apiResponse.data = new StudentDTO()
+				{
+					Id = student.Id,
+					StudentName = student.StudentName,
+					Email = student.Email,
+					Address = student.Address
+				};
+
+				_apiResponse.Status = true;
+				_apiResponse.StatusCode = HttpStatusCode.OK;
+				return Ok(_apiResponse);
+			}
+			catch (Exception ex)
+			{
+
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
+		
 		}
 
 		[HttpGet("Name:string")]
@@ -110,22 +144,37 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult<StudentDTO> GetStudnetByName(string Name)
 		{
-			if (string.IsNullOrEmpty(Name))
-				return BadRequest();
-
-			var student = _studentRepository.Get(i => i.StudentName.ToLower().Contains(Name.ToLower()));
-			if (student == null)
-				return NotFound("This Student is not Exist");
-
-			var StudentDTO = new StudentDTO()
+			try
 			{
-				Id = student.Id,
-				StudentName = student.StudentName,
-				Email = student.Email,
-				Address = student.Address,
-				DOB = student.DOB
-			};
-			return Ok(StudentDTO);
+				if (string.IsNullOrEmpty(Name))
+					return BadRequest();
+
+				var student = _studentRepository.Get(i => i.StudentName.ToLower().Contains(Name.ToLower()));
+				if (student == null)
+					return NotFound("This Student is not Exist");
+
+				_apiResponse.data = new StudentDTO()
+				{
+					Id = student.Id,
+					StudentName = student.StudentName,
+					Email = student.Email,
+					Address = student.Address,
+					DOB = student.DOB
+				};
+				_apiResponse.Status = true;
+				_apiResponse.StatusCode = HttpStatusCode.OK;
+				return Ok(_apiResponse);
+
+			}
+			catch (Exception ex)
+			{
+
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
+		
 		}
 
 
@@ -139,31 +188,47 @@ namespace CollegeApp.Controllers
 
 		public ActionResult<StudentDTO> CreateStudent([FromBody] StudentDTO model)
 		{
-
-			if (model == null)
-				return BadRequest();
-
-			//if (model.AdmissionDate < DateTime.Now)
-			//{
-			//	ModelState.AddModelError("AddmissionDate Error", "Admission Date must be greater than or equal to todays date");
-			//	return BadRequest(ModelState);
-			//}
-
-
-
-			var student = new Student()
+			try
 			{
-				StudentName = model.StudentName,
-				Email = model.Email,
-				Address = model.Address,
-				DOB=model.DOB
-			};
 
-			var Record = _studentRepository.Create(student);
+				if (model == null)
+					return BadRequest();
 
-			model.Id = Record.Id;
+				//if (model.AdmissionDate < DateTime.Now)
+				//{
+				//	ModelState.AddModelError("AddmissionDate Error", "Admission Date must be greater than or equal to todays date");
+				//	return BadRequest(ModelState);
+				//}
 
-			return CreatedAtRoute("GetStudentById" , new {id = model.Id} , model);
+
+
+				var student = new Student()
+				{
+					StudentName = model.StudentName,
+					Email = model.Email,
+					Address = model.Address,
+					DOB = model.DOB
+				};
+
+				var Record = _studentRepository.Create(student);
+
+				model.Id = Record.Id;
+
+				_apiResponse.data = student;
+				_apiResponse.Status = true;
+				_apiResponse.StatusCode = HttpStatusCode.OK;
+				return CreatedAtRoute("GetStudentById", new { id = model.Id }, _apiResponse);
+
+			}
+			catch (Exception ex)
+			{
+
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
+
 			
 		}
 
@@ -180,25 +245,39 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult UpdateStudent([FromBody] StudentDTO model)
 		{
-			if (model == null || model.Id == 0)
+
+			try
+			{
+				if (model == null || model.Id == 0)
+				{
+
+					return BadRequest();
+				}
+
+				var existingStudent = _studentRepository.Get(i => i.Id == model.Id, true);
+				if (existingStudent == null)
+					return NotFound();
+
+
+				existingStudent.StudentName = model.StudentName;
+				existingStudent.Email = model.Email;
+				existingStudent.Address = model.Address;
+				existingStudent.DOB = model.DOB;
+
+				_studentRepository.Update(existingStudent);
+
+				return NoContent();
+
+			}
+			catch (Exception ex)
 			{
 
-				return BadRequest();
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
 			}
 
-			var existingStudent = _studentRepository.Get(i => i.Id == model.Id , true);
-			if (existingStudent == null)
-				return NotFound();
-
-			
-			existingStudent.StudentName = model.StudentName;
-			existingStudent.Email = model.Email;
-			existingStudent.Address = model.Address;
-			existingStudent.DOB = model.DOB;
-
-			_studentRepository.Update(existingStudent);
-
-			return NoContent();
 		}
 
 
@@ -214,39 +293,52 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult UpdateStudentPartial(int id, [FromBody] JsonPatchDocument<StudentDTO> patchDocument)
 		{
-			if (patchDocument == null || id == 0)
+			try
 			{
+				if (patchDocument == null || id == 0)
+				{
 
-				return BadRequest();
+					return BadRequest();
+				}
+
+				var existingStudent = _studentRepository.Get(i => i.Id == id, true);
+				if (existingStudent == null)
+					return NotFound();
+
+
+				var StudentDTO = new StudentDTO()
+				{
+					Id = existingStudent.Id,
+					StudentName = existingStudent.StudentName,
+					Email = existingStudent.Email,
+					Address = existingStudent.Address,
+				};
+
+				patchDocument.ApplyTo(StudentDTO, ModelState);
+
+
+				if (!ModelState.IsValid)
+					return BadRequest(ModelState);
+
+
+				existingStudent.StudentName = StudentDTO.StudentName;
+				existingStudent.Email = StudentDTO.Email;
+				existingStudent.Address = StudentDTO.Address;
+				existingStudent.DOB = StudentDTO.DOB;
+
+				_studentRepository.Update(existingStudent);
+				return NoContent();
+
 			}
-
-			var existingStudent = _studentRepository.Get(i => i.Id == id , true);
-			if (existingStudent == null)
-				return NotFound();
-
-
-			var StudentDTO = new StudentDTO()
+			catch (Exception ex)
 			{
-				Id = existingStudent.Id,
-				StudentName = existingStudent.StudentName,
-				Email = existingStudent.Email,
-				Address = existingStudent.Address,
-			};
 
-			patchDocument.ApplyTo(StudentDTO , ModelState);
-
-
-			if (!ModelState.IsValid)
-				return BadRequest(ModelState);
-
-
-			existingStudent.StudentName = StudentDTO.StudentName;
-			existingStudent.Email = StudentDTO.Email;
-			existingStudent.Address = StudentDTO.Address;
-			existingStudent.DOB = StudentDTO.DOB;
-
-			_studentRepository.Update(existingStudent);
-			return NoContent();
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
+	
 
 		}
 
@@ -259,15 +351,30 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult<bool>  DeleteStudent(int id)
 		{
-			if (id <= 0)
-				return BadRequest();
-			Student student = _studentRepository.Get(i => i.Id == id);
-			if (student == null)
-				return NotFound("This Stuent is not already exist");
-			_studentRepository.Delete(student);
+			try
+			{
+				if (id <= 0)
+					return BadRequest();
+				Student student = _studentRepository.Get(i => i.Id == id);
+				if (student == null)
+					return NotFound("This Stuent is not already exist");
+				_studentRepository.Delete(student);
 
+				_apiResponse.data = true;
+				_apiResponse.Status = true;
+				_apiResponse.StatusCode = HttpStatusCode.OK;
+				return Ok(_apiResponse);
 
-			return Ok(true);
+			}
+			catch (Exception ex)
+			{
+
+				_apiResponse.Errors.Add(ex.Message);
+				_apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+				_apiResponse.Status = false;
+				return Ok(_apiResponse);
+			}
+
 		}
 	}
 }
