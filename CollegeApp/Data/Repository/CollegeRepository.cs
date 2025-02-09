@@ -34,7 +34,7 @@ namespace CollegeApp.Data.Repository
 
 		}
 
-		T ICollegeRepository<T>.GetById(Expression<Func<T , bool>>filter, bool useNoTracking)
+		T ICollegeRepository<T>.Get(Expression<Func<T , bool>>filter, bool useNoTracking)
 		{
 			if (useNoTracking)
 
@@ -44,10 +44,7 @@ namespace CollegeApp.Data.Repository
 				return _dbSet.FirstOrDefault(filter);
 		}
 
-		T ICollegeRepository<T>.GetByName(Expression<Func<T, bool>> filter)
-		{
-			return _dbSet.FirstOrDefault(filter);
-		}
+	
 
 		T  ICollegeRepository<T>.Update(T dbRecord)
 		{

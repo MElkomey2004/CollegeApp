@@ -2,6 +2,7 @@
 using CollegeApp.Data;
 using CollegeApp.Data.Repository;
 using CollegeApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,15 @@ namespace CollegeApp.Controllers
 
 	[Route("api/[controller]")]
 	[ApiController] //This is reponsible for validation and other requirements i will add this soon.
+
+	[Authorize(AuthenticationSchemes ="LoginForLocalUsers",Roles ="Superadmin,Admin")]
 	public class StudentController : ControllerBase
 	{
 
 		private readonly ILogger<StudentController> _logger ;
 		private readonly IMapper _mapper;
-		private readonly ICollegeRepository<Student> _studentRepository;
-        public StudentController(ILogger<StudentController> logger , IMapper mapper , ICollegeRepository<Student> studentRepository)
+		private readonly IStudentRepository _studentRepository;
+        public StudentController(ILogger<StudentController> logger , IMapper mapper , IStudentRepository studentRepository)
         {
 			_mapper = mapper;
 			_logger = logger;
@@ -29,8 +32,11 @@ namespace CollegeApp.Controllers
         [HttpGet]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+		//[AllowAnonymous]
 
 		public  ActionResult< IEnumerable<StudentDTO>> GetStudents()
 		{
@@ -73,12 +79,14 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-		public ActionResult<StudentDTO> GetStudentById(int id)
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public ActionResult<StudentDTO> Get(int id)
 		{
 			if (id <= 0)
 				return BadRequest();
 			
-			var student = _studentRepository.GetById(i => i.Id == id);
+			var student = _studentRepository.Get(i => i.Id == id);
 			if (student == null)
 				return NotFound("The student is not exist");
 
@@ -98,12 +106,14 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-		public ActionResult <StudentDTO> GetStudnetByName(string Name)
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public ActionResult<StudentDTO> GetStudnetByName(string Name)
 		{
 			if (string.IsNullOrEmpty(Name))
 				return BadRequest();
 
-			var student = _studentRepository.GetByName(i => i.StudentName.ToLower().Contains(Name.ToLower()));
+			var student = _studentRepository.Get(i => i.StudentName.ToLower().Contains(Name.ToLower()));
 			if (student == null)
 				return NotFound("This Student is not Exist");
 
@@ -124,6 +134,8 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 
 		public ActionResult<StudentDTO> CreateStudent([FromBody] StudentDTO model)
 		{
@@ -164,6 +176,8 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult UpdateStudent([FromBody] StudentDTO model)
 		{
 			if (model == null || model.Id == 0)
@@ -172,7 +186,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _studentRepository.GetById(i => i.Id == model.Id , true);
+			var existingStudent = _studentRepository.Get(i => i.Id == model.Id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -196,6 +210,8 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult UpdateStudentPartial(int id, [FromBody] JsonPatchDocument<StudentDTO> patchDocument)
 		{
 			if (patchDocument == null || id == 0)
@@ -204,7 +220,7 @@ namespace CollegeApp.Controllers
 				return BadRequest();
 			}
 
-			var existingStudent = _studentRepository.GetById(i => i.Id == id , true);
+			var existingStudent = _studentRepository.Get(i => i.Id == id , true);
 			if (existingStudent == null)
 				return NotFound();
 
@@ -239,11 +255,13 @@ namespace CollegeApp.Controllers
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public ActionResult<bool>  DeleteStudent(int id)
 		{
 			if (id <= 0)
 				return BadRequest();
-			Student student = _studentRepository.GetById(i => i.Id == id);
+			Student student = _studentRepository.Get(i => i.Id == id);
 			if (student == null)
 				return NotFound("This Stuent is not already exist");
 			_studentRepository.Delete(student);
