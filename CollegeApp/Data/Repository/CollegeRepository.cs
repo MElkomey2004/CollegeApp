@@ -54,5 +54,15 @@ namespace CollegeApp.Data.Repository
 
 			return dbRecord;
 		}
+
+		T ICollegeRepository<T>.GetAllByFilter(Expression<Func<T, bool>> filter , bool useNoTracking)
+		{
+			if (useNoTracking)
+
+				return _dbSet.AsNoTracking().FirstOrDefault(filter);
+
+			else
+				return _dbSet.FirstOrDefault(filter);
+		}
 	}
 }

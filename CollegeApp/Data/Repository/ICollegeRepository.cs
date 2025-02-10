@@ -11,5 +11,6 @@ namespace CollegeApp.Data.Repository
 		public T Update(T dbRecord);
 		public bool Delete(T dbRecord);
 
+		public T GetAllByFilter(Expression<Func<T, bool>> filter , bool useNoTracking = false);
 	}
 }
